@@ -1,5 +1,5 @@
 import {
-  BrowserView
+  WebContentsView
 } from 'electron'
 import getElectronStoreKey from '../electronStore/getKey.js'
 import getActiveTabId from './getActiveId.js'
@@ -34,15 +34,18 @@ export default function (
   }
 
   const tab =
-    new BrowserView(
+    new WebContentsView(
       options
     )
 
   tab.uuid = uuid
+  tab.isTab = true
 
-  mainWindow.addBrowserView(
-    tab
-  )
+  mainWindow
+    .contentView
+    .addChildView(
+      tab
+    )
 
   changeViewBackgroundColor(
     tab
@@ -63,7 +66,8 @@ export default function (
     tab
   )
 
-  const url = `${baseUrl}#/${path}`
+  const url =
+    `${baseUrl}#/${path}`
 
   tab
     .webContents
@@ -83,7 +87,7 @@ export default function (
       )
   }
 
-  mainWindow
+  mainView
     .webContents
     .send(
       'add-tab',

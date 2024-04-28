@@ -1,5 +1,7 @@
 import {
-  BrowserWindow
+  BaseWindow,
+  screen,
+  WebContentsView
 } from 'electron'
 import {
   windowIcon
@@ -19,6 +21,7 @@ import setViewScale from '../view/setScale.js'
 import callQuit from '../app/callQuit.js'
 import setTrayMenu from '../tray/setMenu.js'
 import setTabsBounds from '../tabs/setBounds.js'
+import setMainViewBounds from '../mainView/setBounds.js'
 import changeViewBackgroundColor
   from '../view/changeBackgroundColor.js'
 
@@ -69,6 +72,8 @@ function handleClose (
 }
 
 function handleResize () {
+  setMainViewBounds()
+
   setTabsBounds()
 }
 
@@ -76,9 +81,11 @@ export default function () {
   const mainWindowWidth = 900
   const mainWindowHeight = 600
 
-  const options = {
+  const mainWindowOptions = {
     width: mainWindowWidth,
     height: mainWindowHeight,
+    minWidth: mainWindowWidth,
+    minHeight: mainWindowHeight,
     icon: windowIcon,
     show: false,
     webPreferences: {
@@ -89,18 +96,9 @@ export default function () {
   }
 
   mainWindow =
-    new BrowserWindow(
-      options
+    new BaseWindow(
+      mainWindowOptions
     )
-
-  mainWindow.loadURL(
-    baseUrl
-  )
-
-  mainWindow.setMinimumSize(
-    mainWindowWidth,
-    mainWindowHeight
-  )
 
   mainWindow.removeMenu()
 
@@ -108,22 +106,51 @@ export default function () {
     mainWindow
   )
 
+  const mainViewOptions = {
+    webPreferences: {
+      contextIsolation: false,
+      devTools: isDevelopment,
+      nodeIntegration: true
+    }
+  }
+
+  mainView =
+    new WebContentsView(
+      mainViewOptions
+    )
+
+  setMainViewBounds()
+
+  mainWindow
+    .contentView
+    .addChildView(
+      mainView
+    )
+
+  mainView
+    .webContents
+    .loadURL(
+      baseUrl
+    )
+
+  handleReadyToShow()
+
   if (isShowDevTools) {
     const devToolsData = {
       mode: 'detach'
     }
 
-    mainWindow
+    mainView
       .webContents
       .openDevTools(
         devToolsData
       )
   }
 
-  mainWindow.once(
-    'ready-to-show',
-    handleReadyToShow
-  )
+  // mainWindow.once(
+  //   'ready-to-show',
+  //   handleReadyToShow
+  // )
 
   mainWindow.on(
     'show',
@@ -144,4 +171,10 @@ export default function () {
     'resize',
     handleResize
   )
+
+  mainView
+    .webContents
+    .setWindowOpenHandler(
+      handleNewWindow
+    )
 }
